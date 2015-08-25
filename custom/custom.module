@@ -1,0 +1,60 @@
+<?php
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function custom_form_system_site_information_settings_alter ( &$form, &$form_state ) {
+    // Add field in Site Information area of admin configuration.
+    $form['site_information']['siteapikey'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Site API Key'),
+        '#description' => t('Site API Key'),
+        '#default_value' => variable_get('siteapikey', 'No API key yet.'),
+        '#weight' => '0',
+    );
+
+    // Change button text
+    $form['actions']['submit']['#value'] = 'Update configuration';
+
+    // Display message after submit
+    $form['#submit'][] = 'custom_site_information_submit';
+}
+
+function custom_site_information_submit($form, &$form_state) {
+  drupal_set_message(t('Form API key is saved.'));
+}
+
+/**
+ * Implementation of hook_menu()
+ */
+function custom_menu() {
+    $items = array();
+    $items['api/%/%'] = array(
+        'title' => 'Node JSON',
+        'page callback' => 'custom_node_json',
+        'page arguments' => array(1,2),
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK,
+    );
+
+    return $items;
+}
+
+function custom_node_json($api,$nid) {
+    if(is_numeric($nid)) { 
+        $node = node_load($nid);
+        $ntype= $node->type;
+        if((variable_get('siteapikey')==$api) && !empty($ntype) && $ntype='page' ) { // argument matches API key and node is type of page
+            drupal_json_output($node); 
+            drupal_exit();  
+        }
+        else {
+            print 'Access Denied.';
+        }
+
+    }
+    else {
+        print 'Access Denied.';
+    }
+ 
+}
